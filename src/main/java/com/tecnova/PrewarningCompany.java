@@ -63,7 +63,7 @@ public class PrewarningCompany {
             do {
 
                 //查询数据的代码
-                String sql = "SELECT * FROM company WHERE prewarn_level IS NULL OR prewarn_leveldetail IS NULL OR prewarn_info IS NULL LIMIT 100 ";    //要执行的SQL
+                String sql = "SELECT * FROM company WHERE prewarn_level IS NULL OR prewarn_leveldetail IS NULL OR prewarn_info IS NULL OR warn_level IS NULL LIMIT 100 ";    //要执行的SQL
                 ResultSet rs = stmt.executeQuery(sql);//创建数据对象
                 System.out.println("编号" + "\t" + "平台名称" + "\t" + "公司名称");
                 currCount = 0;
@@ -492,12 +492,13 @@ public class PrewarningCompany {
                     System.out.println(prewarnInfo);
 
                     //修改数据的代码
-                    String sql2 = "UPDATE company SET prewarn_leveldetail=? , prewarn_info=?, prewarn_level=? WHERE id=? ";
+                    String sql2 = "UPDATE company SET prewarn_leveldetail=? , prewarn_info=?, prewarn_level=?, warn_level=? WHERE id=? ";
                     PreparedStatement pst = conn.prepareStatement(sql2);
                     pst.setString(1, prewarnLevelDetail);
                     pst.setString(2, prewarnInfo);
                     pst.setInt(3, prewarnLevel);
-                    pst.setInt(4, id);
+                    pst.setInt(4, prewarnLevel);
+                    pst.setInt(5, id);
                     pst.executeUpdate();
 
                 }
@@ -565,12 +566,11 @@ public class PrewarningCompany {
     }
 
     public static boolean containsKeylist(String content, String[] keylist) {
-        if (content == null || keylist == null) {
-            return false;
-        }
-        for (int i = 0; i < keylist.length; i++) {
-            if (content.contains(keylist[i])) {
-                return true;
+        if (content != null && keylist != null) {
+            for (int i = 0; i < keylist.length; i++) {
+                if (content.contains(keylist[i])) {
+                    return true;
+                }
             }
         }
         return false;
