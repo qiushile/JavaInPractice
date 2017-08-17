@@ -63,7 +63,7 @@ public class PrewarningCompany {
             do {
 
                 //查询数据的代码
-                String sql = "SELECT * FROM company WHERE prewarn_level IS NULL LIMIT 100 ";    //要执行的SQL
+                String sql = "SELECT * FROM company WHERE prewarn_level IS NULL OR prewarn_leveldetail IS NULL OR prewarn_info IS NULL LIMIT 100 ";    //要执行的SQL
                 ResultSet rs = stmt.executeQuery(sql);//创建数据对象
                 System.out.println("编号" + "\t" + "平台名称" + "\t" + "公司名称");
                 currCount = 0;
@@ -102,7 +102,7 @@ public class PrewarningCompany {
                     }
 
                     String shouyiOver13Message = (maxShouyi > 13) ? "年收益范围超过13%" : "";
-                    String aqtdMessage = isAqtd ? "" : "平台未经过Https安全通道加密传输aqtd";
+                    String aqtdMessage = isAqtd ? "" : "平台未经过Https安全通道加密传输";
                     String bzmsMessage = containsKeylist(bzms, reservFund) ? "" : "保障模式采用除风险备用金及与风险备用金相组合的模式除外，包括：单纯的平台垫付、第三方担保机构、小额贷款公司担保、非融资性担保公司担保";
                     String basicInfoLostMessage = getDataLost(rs, basicInfo, basicInfoCn);
                     String importantBasicInfoLostMessage = getDataLost(rs, importantBasicInfo, importantBasicInfoCn);
@@ -454,14 +454,18 @@ public class PrewarningCompany {
 
                     System.out.println();
 
-                    String prewarnLevel = "";
+                    int prewarnLevel = 0; // top level
+                    String prewarnLevelDetail = "";
                     String prewarnInfo = "";
 
                     for (int i = 0; i < info.length; i++) {
                         System.out.println("\t" + warnName[i] + ": " + levelName[level[i]]);
-                        prewarnLevel = prewarnLevel + level[i];
+                        if (prewarnLevel < level[i]) {
+                            prewarnLevel = level[i];
+                        }
+                        prewarnLevelDetail = prewarnLevelDetail + level[i];
                         if (i < info.length - 1) {
-                            prewarnLevel = prewarnLevel + "|";
+                            prewarnLevelDetail = prewarnLevelDetail + "|";
                         }
                         if (level[i] > 0) {
                             System.out.println("\t\t预警内容: ");
@@ -484,15 +488,16 @@ public class PrewarningCompany {
                         }
                     }
 
-                    System.out.println(prewarnLevel);
+                    System.out.println(prewarnLevelDetail);
                     System.out.println(prewarnInfo);
 
                     //修改数据的代码
-                    String sql2 = "UPDATE company SET prewarn_level=? , prewarn_info=? WHERE id=? ";
+                    String sql2 = "UPDATE company SET prewarn_leveldetail=? , prewarn_info=?, prewarn_level=? WHERE id=? ";
                     PreparedStatement pst = conn.prepareStatement(sql2);
-                    pst.setString(1, prewarnLevel);
+                    pst.setString(1, prewarnLevelDetail);
                     pst.setString(2, prewarnInfo);
-                    pst.setInt(3, id);
+                    pst.setInt(3, prewarnLevel);
+                    pst.setInt(4, id);
                     pst.executeUpdate();
 
                 }
