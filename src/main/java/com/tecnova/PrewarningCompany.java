@@ -82,6 +82,11 @@ public class PrewarningCompany {
 
                     boolean tzqxLessThanOneMonth = (tzqx != null && (tzqx.contains("天标") || tzqx.contains("秒标")));
                     boolean hasTuoguan = !(tuoguan == null || tuoguan.contains("未") || tuoguan.contains("无") || tuoguan.contains("否") || tuoguan.contains("不"));
+                    boolean hasCreditRiskWebInfo = false; // TODO 信用风险， 判断 信用中国 网站查询
+                    boolean hasCreditRiskMatchWords = false; // TODO 信用风险， 判断 关键字匹配库中数据
+                    boolean hasCreditRisk = hasCreditRiskWebInfo || hasCreditRiskMatchWords; // 信用风险
+                    boolean hasWebsiteClosed = false; // TODO 关键词匹配：网站关闭、网站打不开、网站不能访问、网站进不去。
+                    boolean hasMatchWordsBroken = false; // TODO 关键词匹配：提现困难、失联、跑路。
 
                     float maxShouyi = 0;
                     float minShouyi = 0;
@@ -111,7 +116,11 @@ public class PrewarningCompany {
                     String tzqxMessage = tzqxLessThanOneMonth ? "投资期限<1个月" : "";
                     String tuoguanMessage = hasTuoguan ? "" : "无第三方托管";
                     String fxzbjMessage = (fxzbj != null && fxzbj.trim().equals("有")) ? "" : "无风险准备金";
-
+                    String creditRiskMessage = hasCreditRisk? "信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息）": "";
+                    String creditRiskWebInfoMessage = hasCreditRiskWebInfo? "通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息": "";
+                    String creditRiskMatchWordsMessage = hasCreditRiskMatchWords? "借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息": "";
+                    String websiteClosedMessage = "关键词匹配：网站关闭、网站打不开、网站不能访问、网站进不去。";
+                    String matchWordsBrokenMessage = "关键词匹配：提现困难、失联、跑路";
 //                List<String> list = new ArrayList<>();
 
                     Comparator<String> comparator = new Comparator<String>() {
@@ -170,7 +179,12 @@ public class PrewarningCompany {
                         infoList.get(currWarn).add(shouyiOver13Message);
                     }
                     // (4) 重要基础信息缺失，且存在信用风险（借贷信息不良，包括银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录
-                    // 无法判断信用风险
+                    if (importantBasicInfoLostMessage.length() > 0 && hasCreditRisk) {
+                        level[currWarn] = 2;
+                        info[currWarn] = importantBasicInfoLostMessage + "," + contactLostMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // (5) 平台未经过Https安全通道加密传输，且重要基础信息缺失
                     if (!isAqtd && importantBasicInfoLostMessage.length() > 0) {
                         level[currWarn] = 2;
@@ -180,10 +194,23 @@ public class PrewarningCompany {
 
                     }
                     // (6) 无基本联系方式，重要基础信息缺失、年收益范围超过13%、投资期限<1个月、存在信用风险。
-                    // 无法判断信用风险
+                    if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth && hasCreditRisk) {
+                        level[currWarn] = 2;
+                        info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(contactLostMessage);
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // (7) 无基本联系方式，重要基础信息缺失，且存在信用风险（借贷信息不良，包括银行贷款、小额贷款公司借款等还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息且通过信用中国或工商系统查证有不良信息记录）
-                    // 无法判断信用风险
-
+                    if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && hasCreditRisk) {
+                        level[currWarn] = 2;
+                        info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(contactLostMessage);
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // 红色预警判断：
                     // (1) 重要基础信息缺失，年收益范围超过13% shouyi，且投资期限tzqx<1个月。
                     if (importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth) {
@@ -223,10 +250,17 @@ public class PrewarningCompany {
                         infoList.get(currWarn).add(bzmsMessage);
                     }
                     // (5) 重要基础信息缺失、年收益范围超过13% shouyi、，投资期限<1个月，公司存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息）；
-                    // 无法判断信用风险
+                    if (importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth && hasCreditRisk) {
+                        level[currWarn] = 3;
+                        info[currWarn] = importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // (6) 无基本联系方式，重要基础信息缺失，年收益率超过13% shouyi，且投资期限<1个月。
                     if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth) {
-                        level[currWarn] = 2;
+                        level[currWarn] = 3;
                         info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + " " + info[currWarn];
                         infoList.get(currWarn).add(contactLostMessage);
                         infoList.get(currWarn).add(importantBasicInfoLostMessage);
@@ -234,7 +268,16 @@ public class PrewarningCompany {
                         infoList.get(currWarn).add(tzqxMessage);
                     }
                     // (7) 无基本联系方式、重要基础信息缺失、年收益率超过13% shouyi、投资期限<1个月，平台未经过Https安全通道加密传输 aqtd、存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息），且保障模式bzms采用除风险备用金及与风险备用金相组合的模式除外，包括：单纯的平台垫付、第三方担保机构、小额贷款公司担保、非融资性担保公司担保；
-                    // 无法判断信用风险
+                    if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth && !isAqtd && hasCreditRisk) {
+                        level[currWarn] = 3;
+                        info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + "," + aqtdMessage + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(contactLostMessage);
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                        infoList.get(currWarn).add(aqtdMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
 //                System.out.println(info[currWarn]);
 
 
@@ -283,7 +326,15 @@ public class PrewarningCompany {
                         infoList.get(currWarn).add(shouyiOver13Message);
                     }
                     // （5）无基本联系方式，重要基础信息缺失、年收益范围超过13%、投资期限<1个月、存在信用风险。
-                    // 无法判断信用风险
+                    if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth && hasCreditRisk) {
+                        level[currWarn] = 2;
+                        info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(contactLostMessage);
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
 
                     // 红色预警判断：
                     // (1) 年收益范围超过13% shouyi，且投资期限<1个月。
@@ -328,13 +379,37 @@ public class PrewarningCompany {
                         infoList.get(currWarn).add(bzmsMessage);
                     }
                     // (6) 年收益范围超过13% shouyi，公司存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息。
-                    // 无法判断信用风险
+                    if (shouyiOver13Message.length() > 0 &&  hasCreditRisk) {
+                        level[currWarn] = 3;
+                        info[currWarn] = shouyiOver13Message + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // (7) 公司存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息），年收益范围超过13%  shouyi 且投资期限<1个月。
-                    // 无法判断信用风险
+                    if (hasCreditRisk && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth) {
+                        level[currWarn] = 3;
+                        info[currWarn] = creditRiskMessage + "," + shouyiOver13Message + "," + tzqxMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(creditRiskMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                    }
                     // (8) 公司存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息），年收益范围超过13% shouyi，保障模式bzms采用除风险备用金及与风险备用金相组合的模式除外，包括：单纯的平台垫付、第三方担保机构、小额贷款公司担保、非融资性担保公司担保
-                    // 无法判断信用风险
+                    if (hasCreditRisk && shouyiOver13Message.length() > 0 && bzmsMessage.length() > 0) {
+                        level[currWarn] = 3;
+                        info[currWarn] = creditRiskMessage + "," + shouyiOver13Message + "," + bzmsMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(creditRiskMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(bzmsMessage);
+                    }
                     // (9) 重要基础信息缺失、年收益范围超过13% shouyi、，投资期限<1个月，公司存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息）；
-                    // 无法判断信用风险
+                    if (importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth && hasCreditRisk) {
+                        level[currWarn] = 3;
+                        info[currWarn] = importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // (10) 无基本联系方式，重要基础信息缺失，年收益率超过13% shouyi，且投资期限<1个月。
                     if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth) {
                         level[currWarn] = 3;
@@ -353,7 +428,17 @@ public class PrewarningCompany {
                         infoList.get(currWarn).add(tzqxMessage);
                     }
                     // (12) 无基本联系方式、重要基础信息缺失、年收益率超过13% shouyi、投资期限<1个月，平台未经过Https安全通道加密传输 aqtd、存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息），且保障模式bzms采用除风险备用金及与风险备用金相组合的模式除外，包括：单纯的平台垫付、第三方担保机构、小额贷款公司担保、非融资性担保公司担保；
-                    // 无法判断信用风险
+                    if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth && !isAqtd && hasCreditRisk && bzmsMessage.length() > 0) {
+                        level[currWarn] = 3;
+                        info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + " " + aqtdMessage + " " + creditRiskMessage + " " + bzmsMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(contactLostMessage);
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                        infoList.get(currWarn).add(aqtdMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                        infoList.get(currWarn).add(bzmsMessage);
+                    }
 //                System.out.println(info[currWarn]);
 
 
@@ -361,20 +446,94 @@ public class PrewarningCompany {
                     currWarn = 2;
                     //  黄色预警判断：
                     //  (1) 借贷信息不良，包括银行贷款、小额贷款公司借款等还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息。
+                    if (hasCreditRiskWebInfo) {
+                        level[currWarn] = 1;
+                        info[currWarn] = creditRiskWebInfoMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(creditRiskWebInfoMessage);
+                    }
                     //  (2) 通过信用中国或工商系统查证有不良信息记录。从信用中国系统 http://www.creditchina.gov.cn/home 信用信息下获取；从国家企业信息信息公示系统 http://www.gsxt.gov.cn/index.html 获取信用信息。
-
+                    if (hasCreditRiskMatchWords) {
+                        level[currWarn] = 1;
+                        info[currWarn] = creditRiskMatchWordsMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(creditRiskMatchWordsMessage);
+                    }
                     //  橙色预警判断
                     // （1）重要基础信息缺失，且存在信用风险（借贷信息不良，包括银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录
+                    if (importantBasicInfoLostMessage.length() > 0 && hasCreditRisk) {
+                        level[currWarn] = 2;
+                        info[currWarn] = importantBasicInfoLostMessage + "," + contactLostMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // （2）无基本联系方式，重要基础信息缺失、年收益范围超过13%、投资期限<1个月、存在信用风险。
+                    if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth && hasCreditRisk) {
+                        level[currWarn] = 2;
+                        info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(contactLostMessage);
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // （3）无基本联系方式，重要基础信息缺失，且存在信用风险（借贷信息不良，包括银行贷款、小额贷款公司借款等还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息且通过信用中国或工商系统查证有不良信息记录）
-
+                    if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && hasCreditRisk) {
+                        level[currWarn] = 2;
+                        info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(contactLostMessage);
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // 红色预警判断：
                     // (1) "借贷信息不良，包括银行贷款、小额贷款公司借款等还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息且通过信用中国或工商系统查证有不良信息记录。 从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息。 "
+                    if (hasCreditRisk) {
+                        level[currWarn] = 3;
+                        info[currWarn] = creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // (2) 年收益范围超过13% shouyi，公司存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息。
+                    if (shouyiOver13Message.length() > 0 &&  hasCreditRisk) {
+                        level[currWarn] = 3;
+                        info[currWarn] = shouyiOver13Message + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // (3) 公司存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息），年收益范围超过13%  shouyi 且投资期限<1个月。
+                    if (hasCreditRisk && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth) {
+                        level[currWarn] = 3;
+                        info[currWarn] = creditRiskMessage + "," + shouyiOver13Message + "," + tzqxMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(creditRiskMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                    }
                     // (4) 公司存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息），年收益范围超过13% shouyi，保障模式bzms采用除风险备用金及与风险备用金相组合的模式除外，包括：单纯的平台垫付、第三方担保机构、小额贷款公司担保、非融资性担保公司担保
+                    if (hasCreditRisk && shouyiOver13Message.length() > 0 && bzmsMessage.length() > 0) {
+                        level[currWarn] = 3;
+                        info[currWarn] = creditRiskMessage + "," + shouyiOver13Message + "," + bzmsMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(creditRiskMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(bzmsMessage);
+                    }
                     // (5) 重要基础信息缺失、年收益范围超过13% shouyi、，投资期限<1个月，公司存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息）；
+                    if (importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth && hasCreditRisk) {
+                        level[currWarn] = 3;
+                        info[currWarn] = importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // (6) 无基本联系方式、重要基础信息缺失、年收益率超过13% shouyi、投资期限<1个月，平台未经过Https安全通道加密传输 aqtd、存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息），且保障模式bzms采用除风险备用金及与风险备用金相组合的模式除外，包括：单纯的平台垫付、第三方担保机构、小额贷款公司担保、非融资性担保公司担保；
+                    if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth && !isAqtd && hasCreditRisk && bzmsMessage.length() > 0) {
+                        level[currWarn] = 3;
+                        info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + " " + aqtdMessage + " " + creditRiskMessage + " " + bzmsMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(contactLostMessage);
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                        infoList.get(currWarn).add(aqtdMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                        infoList.get(currWarn).add(bzmsMessage);
+                    }
 //                System.out.println(info[currWarn]);
 
                     // 4、操作风险
@@ -411,7 +570,17 @@ public class PrewarningCompany {
                         infoList.get(currWarn).add(tzqxMessage);
                     }
                     // (2) 无基本联系方式、重要基础信息缺失、年收益率超过13% shouyi、投资期限<1个月，平台未经过Https安全通道加密传输 aqtd、存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息），且保障模式bzms采用除风险备用金及与风险备用金相组合的模式除外，包括：单纯的平台垫付、第三方担保机构、小额贷款公司担保、非融资性担保公司担保；
-                    // 无法判断信用风险
+                    if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth && !isAqtd && hasCreditRisk && bzmsMessage.length() > 0) {
+                        level[currWarn] = 3;
+                        info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + " " + aqtdMessage + " " + creditRiskMessage + " " + bzmsMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(contactLostMessage);
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                        infoList.get(currWarn).add(aqtdMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                        infoList.get(currWarn).add(bzmsMessage);
+                    }
 //                System.out.println(info[currWarn]);
 
 
@@ -426,7 +595,13 @@ public class PrewarningCompany {
                     }
                     //  橙色预警判断：
                     // (1) 无基本联系方式，重要基础信息缺失，且存在信用风险（借贷信息不良，包括银行贷款、小额贷款公司借款等还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息且通过信用中国或工商系统查证有不良信息记录）
-
+                    if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && hasCreditRisk) {
+                        level[currWarn] = 2;
+                        info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + creditRiskMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(contactLostMessage);
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                    }
                     // 红色预警判断：
                     // (1) 无基本联系方式，重要基础信息缺失，年收益率超过13% shouyi，且投资期限<1个月。
                     if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth) {
@@ -438,7 +613,17 @@ public class PrewarningCompany {
                         infoList.get(currWarn).add(tzqxMessage);
                     }
                     // (2) 无基本联系方式、重要基础信息缺失、年收益率超过13% shouyi、投资期限<1个月，平台未经过Https安全通道加密传输 aqtd、存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息），且保障模式bzms采用除风险备用金及与风险备用金相组合的模式除外，包括：单纯的平台垫付、第三方担保机构、小额贷款公司担保、非融资性担保公司担保；
-                    // 无法判断信用风险
+                    if (contactLostMessage.length() > 0 && importantBasicInfoLostMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth && !isAqtd && hasCreditRisk && bzmsMessage.length() > 0) {
+                        level[currWarn] = 3;
+                        info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + " " + aqtdMessage + " " + creditRiskMessage + " " + bzmsMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(contactLostMessage);
+                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
+                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(tzqxMessage);
+                        infoList.get(currWarn).add(aqtdMessage);
+                        infoList.get(currWarn).add(creditRiskMessage);
+                        infoList.get(currWarn).add(bzmsMessage);
+                    }
 //                System.out.println(info[currWarn]);
 
 
@@ -446,10 +631,20 @@ public class PrewarningCompany {
                     currWarn = 5;
                     //  黄色预警判断：
                     //  (1) 关键词匹配：网站关闭、网站打不开、网站不能访问、网站进不去。
+                    if (hasWebsiteClosed) {
+                        level[currWarn] = 1;
+                        info[currWarn] = websiteClosedMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(websiteClosedMessage);
+                    }
                     //  橙色预警判断：
 
                     // 红色预警判断：
                     // (1) 关键词匹配：提现困难、失联、跑路
+                    if (hasMatchWordsBroken) {
+                        level[currWarn] = 3;
+                        info[currWarn] = matchWordsBrokenMessage + " " + info[currWarn];
+                        infoList.get(currWarn).add(matchWordsBrokenMessage);
+                    }
 //                System.out.println(info[currWarn]);
 
                     System.out.println();
