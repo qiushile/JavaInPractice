@@ -565,8 +565,8 @@ public class PrewarningCompany {
                     if (aqtdMessage.length() > 0 && shouyiOver13Message.length() > 0 && tzqxLessThanOneMonth) {
                         level[currWarn] = 3;
                         info[currWarn] = aqtdMessage + "," + shouyiOver13Message + "," + tzqxMessage + " " + info[currWarn];
-//                        infoList.get(currWarn).add(aqtdMessage);
-                        infoList.get(currWarn).add(shouyiOver13Message);
+                        infoList.get(currWarn).add(aqtdMessage);
+//                        infoList.get(currWarn).add(shouyiOver13Message);
 //                        infoList.get(currWarn).add(tzqxMessage);
                     }
                     // (2) 无基本联系方式、重要基础信息缺失、年收益率超过13% shouyi、投资期限<1个月，平台未经过Https安全通道加密传输 aqtd、存在信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息），且保障模式bzms采用除风险备用金及与风险备用金相组合的模式除外，包括：单纯的平台垫付、第三方担保机构、小额贷款公司担保、非融资性担保公司担保；
@@ -575,9 +575,9 @@ public class PrewarningCompany {
                         info[currWarn] = contactLostMessage + "," + importantBasicInfoLostMessage + "," + shouyiOver13Message + "," + tzqxMessage + " " + aqtdMessage + " " + creditRiskMessage + " " + bzmsMessage + " " + info[currWarn];
 //                        infoList.get(currWarn).add(contactLostMessage);
 //                        infoList.get(currWarn).add(importantBasicInfoLostMessage);
-                        infoList.get(currWarn).add(shouyiOver13Message);
+//                        infoList.get(currWarn).add(shouyiOver13Message);
 //                        infoList.get(currWarn).add(tzqxMessage);
-//                        infoList.get(currWarn).add(aqtdMessage);
+                        infoList.get(currWarn).add(aqtdMessage);
 //                        infoList.get(currWarn).add(creditRiskMessage);
 //                        infoList.get(currWarn).add(bzmsMessage);
                     }
