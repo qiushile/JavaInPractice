@@ -26,9 +26,25 @@ public class jieba {
         List<String> list = segmenter.sentenceProcess(text1);
 //        Arrays.sort(Arrays.asList(list));
         System.out.println(list);
+        System.out.println(processSentenceSimply(text));
         System.out.println(processSentence(text));
     }
 
+    public static List<String> processSentenceSimply(String text) {
+        if (text == null) {
+            return null;
+        }
+        List<String> words = segmenter(text);
+        Set<String> wordsSet = new HashSet<>();
+
+        for (String word : words) {
+            wordsSet.add(word);
+        }
+
+        List<String> res = new ArrayList<>(wordsSet);
+
+        return res;
+    }
 
     public static List<Map<String, String>> processSentence(String text) {
         if (text == null) {
