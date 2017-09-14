@@ -31,30 +31,6 @@ public class PrewarningCompany2 {
     public static String[] dhqq = new String[]{"gfdh", "qq"};
     public static String[] dhqqCn = new String[]{"官方电话", "官方QQ"};
 
-
-    // 基础信息缺失：
-    // 法人代表faren、高管gaoguan、股东及股权占比gqzb、注册机关zcjg、公司类型gslx、工商注册时间gszcsj、注册资金zzzb、项目类型xmlx信息缺失。
-    public static String[] basicInfo = new String[]{"faren", "gaoguan", "gqzb", "zcjg", "gslx", "gszcsj", "zzzb", "xmlx"};
-    public static String[] basicInfoCn = new String[]{"法人代表", "高管", "股东及股权占比", "注册机关", "公司类型", "工商注册时间", "注册资金", "项目类型"};
-
-    // 重要基础信息缺失：
-    // 平台名称 name、平台网址 url、公司名称 company、营业执照注册号 zhizhao、社会统一信用代码 xinyong、组织机构代码 jigou、经营范围 jyfw、注册地点 zcdd、运营地点 yydd、ICP备案号 beian
-    public static String[] importantBasicInfo = new String[]{"name", "url", "company", "zhizhao", "xinyong", "jigou", "jyfw", "zcdd", "yydd", "beian"};
-    public static String[] importantBasicInfoCn = new String[]{"平台名称", "平台网址", "公司名称", "营业执照注册号", "社会统一信用代码", "组织机构代码", "经营范围", "注册地点", "运营地点", "ICP备案号"};
-
-    // 经营信息
-    // 年收益范围 shouyi、公告及发标频率fbpl、投资期限tzqx
-    public static String[] importantBusiness = new String[]{"shouyi", "fbpl", "tzqx"};
-    public static String[] importantBusinessCn = new String[]{"年收益范围", "公告及发标频率", "投资期限"};
-
-    // 联系方式缺失
-    // 官方QQ qq、官方电话gfdh、官方QQ群qqqun、微信公众号wxpt信息缺失
-    public static String[] contact = new String[]{"qq", "gfdh", "qqqun", "wxpt"};
-    public static String[] contactCn = new String[]{"官方QQ", "官方电话", "官方QQ群", "微信公众号"};
-
-    // 准备金可能出现的情况
-    public static String[] reservFund = new String[]{"平台准备金", "平台备用金", "平台备付金", "风险准备金", "保证金"};
-
     public static void main(String[] args) {
 
         calculatePrewarningLevelAndInfo();
@@ -129,11 +105,6 @@ public class PrewarningCompany2 {
 
                     boolean tzqxLessThanOneMonth = (tzqx != null && (tzqx.contains("天标") || tzqx.contains("秒标")));
                     boolean hasTuoguan = !(tuoguan == null || tuoguan.contains("未") || tuoguan.contains("无") || tuoguan.contains("否") || tuoguan.contains("不"));
-                    boolean hasCreditRiskWebInfo = false; // TODO 信用风险， 判断 信用中国 网站查询
-                    boolean hasCreditRiskMatchWords = false; // TODO 信用风险， 判断 关键字匹配库中数据
-                    boolean hasCreditRisk = hasCreditRiskWebInfo || hasCreditRiskMatchWords; // 信用风险
-                    boolean hasWebsiteClosed = false; // TODO 关键词匹配：网站关闭、网站打不开、网站不能访问、网站进不去。
-                    boolean hasMatchWordsBroken = false; // TODO 关键词匹配：提现困难、失联、跑路。
 
                     float maxShouyi = 0;
                     float minShouyi = 0;
@@ -157,30 +128,12 @@ public class PrewarningCompany2 {
                     String gudongMessage = "股东类型与股东及股权占比同时未公示";
                     String registerCodeMessage = "营业执照注册号与统一社会信用代码与组织机构代码同时未公示";
 
-                    String shouyiOver13Message = (maxShouyi > 13) ? "年收益范围超过13%" : "";
-                    String aqtdMessage = isAqtd ? "" : "平台未经过Https安全通道加密传输";
-                    String bzmsMessage = containsKeylist(bzms, reservFund) ? "" : "保障模式采用除风险备用金及与风险备用金相组合的模式除外，包括：单纯的平台垫付、第三方担保机构、小额贷款公司担保、非融资性担保公司担保";
-                    String basicInfoLostMessage = getDataLost(rs, basicInfo, basicInfoCn);
-                    String importantBasicInfoLostMessage = getDataLost(rs, importantBasicInfo, importantBasicInfoCn);
-                    String importantBusinessLostMessage = getDataLost(rs, importantBusiness, importantBusinessCn);
-                    String contactLostMessage = getDataLost(rs, contact, contactCn);
-                    String tzqxMessage = tzqxLessThanOneMonth ? "投资期限<1个月" : "";
-                    String tuoguanMessage = hasTuoguan ? "" : "无第三方托管";
-                    String fxzbjMessage = (fxzbj != null && fxzbj.trim().equals("有")) ? "" : "无风险准备金";
-                    String creditRiskMessage = hasCreditRisk? "信用风险（借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息或通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息）": "";
-                    String creditRiskWebInfoMessage = hasCreditRiskWebInfo? "通过信用中国或工商系统查证有不良信息记录。从信用中国系统http://www.creditchina.gov.cn/home信用信息下获取；从国家企业信息信息公示系统http://www.gsxt.gov.cn/index.html获取信用信息": "";
-                    String creditRiskMatchWordsMessage = hasCreditRiskMatchWords? "借贷信息不良，包括从银行贷款、小额贷款公司借款还款不及时或无力还款，通过文章匹配关键字：无力还款、信用不良、无力支付本息": "";
-                    String websiteClosedMessage = "关键词匹配：网站关闭、网站打不开、网站不能访问、网站进不去。";
-                    String matchWordsBrokenMessage = "关键词匹配：提现困难、失联、跑路";
-//                List<String> list = new ArrayList<>();
-
                     Comparator<String> comparator = new Comparator<String>() {
                         @Override
                         public int compare(String o1, String o2) {
                             return o1.length() - o2.length();
                         }
                     };
-//                list.sort(comparator);
 
                     int[] level = new int[warnName.length]; // 红色:3 橙色:2 黄色:1 无预警:0
                     String[] info = new String[level.length];
@@ -375,7 +328,7 @@ public class PrewarningCompany2 {
                     if (zcdd != null && yydd != null && !zcdd.trim().equals(yydd.trim()) && CosineSimilarAlgorithm.getSimilarity(zcdd, yydd) < 0.95) {
                         level[currWarn] = 1;
                         info[currWarn] = "运营地点和注册地点相似度为95%以下" + " " + info[currWarn];
-                        infoList.get(currWarn).add("运营地点和注册地点相似度为95%以下");
+                        infoList.get(currWarn).add("运营地点和注册地点相似度为95%以下".substring(1,2));
                     }
 
                     //  橙色预警判断： 8
@@ -450,11 +403,6 @@ public class PrewarningCompany2 {
                                 currInfo = currInfo + " " + s;
                             }
                             prewarnInfo = prewarnInfo + currInfo.trim();
-//
-//                        String[] currentInfo = info[i].split(" ");
-//                        for (int j = 0; j < currentInfo.length; j++) {
-//                            System.out.println("\t\t\t(" + (j + 1) + ") " + currentInfo[j]);
-//                        }
                         }
                         if (i < info.length - 1) {
                             prewarnInfo = prewarnInfo + "|";
@@ -487,28 +435,6 @@ public class PrewarningCompany2 {
                     pst.executeUpdate();
 
                 }
-
-//            //修改数据的代码
-//            String sql2 = "update company set name=? where number=?";
-//            PreparedStatement pst = conn.prepareStatement(sql2);
-//            pst.setString(1,"8888");
-//            pst.setInt(2,198);
-//            pst.executeUpdate();
-
-//            //删除数据的代码
-//            String sql3 = "delete from stu where number=?";
-//            pst = conn.prepareStatement(sql3);
-//            pst.setInt(1,701);
-//            pst.executeUpdate();
-
-//            ResultSet rs2 = stmt.executeQuery(sql);//创建数据对象
-//            System.out.println("编号"+"\t"+"姓名"+"\t"+"年龄");
-//            while (rs2.next()){
-//                System.out.print(rs2.getInt(1) + "\t");
-//                System.out.print(rs2.getString(2) + "\t");
-//                System.out.print(rs2.getInt(3) + "\t");
-//                System.out.println();
-//            }
 
                 rs.close();
 
@@ -567,16 +493,5 @@ public class PrewarningCompany2 {
             }
         }
         return true;
-    }
-
-        public static boolean containsKeylist(String content, String[] keylist) {
-        if (content != null && keylist != null) {
-            for (int i = 0; i < keylist.length; i++) {
-                if (content.contains(keylist[i])) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }
